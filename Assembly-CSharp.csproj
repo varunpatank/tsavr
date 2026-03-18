@@ -61,6 +61,7 @@
     <Compile Include="Assets\Fries and Seagull\Ultimate Interior Pack\Scene Props\Scripts\Inspector\MaterialHiderManager.cs" />
     <Compile Include="Assets\Lets Make a VR Game\UI 3D Examples\UI_3D\Scripts\XRKnob.cs" />
     <Compile Include="Assets\Fries and Seagull\Ultimate Interior Pack\Scene Props\Scripts\Inspector\AButtonAttribute.cs" />
+    <Compile Include="Assets\TSA VR Assets\BobaSelector.cs" />
     <Compile Include="Assets\Fries and Seagull\Ultimate Interior Pack\Scene Props\Scripts\ArrayArrangement.cs" />
     <Compile Include="Assets\Fries and Seagull\Ultimate Interior Pack\Scene Props\Scripts\Inspector\AnInspector.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_ExampleScript_01.cs" />

@@ -14,6 +14,7 @@ Library/*
 *.mdb
 *.opendb
 *.VC.db
+*.mp4
 .DS_Store
 *.pidb.meta
 *.pdb.meta
