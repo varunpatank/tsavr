@@ -1,151 +1,55 @@
 using UnityEngine;
 
+// Attach to EACH scannable food object. Give that object a Collider (not trigger).
 public class GazeDisplay : MonoBehaviour
 {
-    [Header("Settings")]
-    public float gazeTimeRequired = 2f;
-    public GameObject uiPanel;
-    public Camera playerCamera;
-    public float hideDelay = 30f;
-    public float fadeDuration = 1f;
+    [Header("References")]
+    public Camera playerCamera;          // drag Main Camera here
+    public CanvasGroup scrollPanel;      // drag the scroll's CanvasGroup here
 
-    private float gazeTimer = 0f;
-    private float hideTimer = 0f;
-    private bool playerInZone = false;
-    private bool panelVisible = false;
-    private float fadeTimer = 0f;
-    private bool fadingIn = false;
-    private bool fadingOut = false;
-    private Renderer panelRenderer;
+    [Header("Tuning")]
+    public float dwellTime = 0.5f;       // look this long to open
+    public float maxDistance = 8f;
+    public float fadeSpeed = 4f;         // higher = snappier
+    public GameObject scanReticleGlow;   // optional: a glow/outline object to enable while dwelling
+
+    float dwell = 0f;
+    bool open = false;
 
     void Start()
     {
-        panelRenderer = uiPanel.GetComponent<Renderer>();
-        // Start fully invisible
-        SetAlpha(0f);
-        uiPanel.SetActive(false);
+        if (playerCamera == null && Camera.main != null) playerCamera = Camera.main;
+        if (scrollPanel != null) { scrollPanel.alpha = 0f; scrollPanel.gameObject.SetActive(true); }
+        if (scanReticleGlow != null) scanReticleGlow.SetActive(false);
     }
 
     void Update()
     {
-        if (!playerInZone)
+        if (playerCamera == null) return;
+
+        bool lookingAtMe = false;
+        Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, maxDistance))
+            lookingAtMe = (hit.transform == transform || hit.transform.IsChildOf(transform));
+
+        if (lookingAtMe && !open)
         {
-            if (panelVisible) StartFadeOut();
-            HandleFade();
-            return;
+            dwell += Time.deltaTime;
+            if (scanReticleGlow != null) scanReticleGlow.SetActive(true);
+            if (dwell >= dwellTime) open = true;
+        }
+        else if (!lookingAtMe)
+        {
+            dwell = 0f;
+            if (scanReticleGlow != null) scanReticleGlow.SetActive(false);
+            open = false;
         }
 
-        Ray ray = new Ray(playerCamera.transform.position,
-                         playerCamera.transform.forward);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, 10f))
+        // Smooth fade toward target — no flicker
+        if (scrollPanel != null)
         {
-            if (hit.transform == transform ||
-                hit.transform.IsChildOf(transform))
-            {
-                gazeTimer += Time.deltaTime;
-                hideTimer = 0f;
-                fadingOut = false;
-
-                if (gazeTimer >= gazeTimeRequired && !panelVisible)
-                    StartFadeIn();
-            }
-            else
-            {
-                gazeTimer = 0f;
-                if (panelVisible)
-                {
-                    hideTimer += Time.deltaTime;
-                    if (hideTimer >= hideDelay)
-                        StartFadeOut();
-                }
-            }
-        }
-        else
-        {
-            gazeTimer = 0f;
-            if (panelVisible)
-            {
-                hideTimer += Time.deltaTime;
-                if (hideTimer >= hideDelay)
-                    StartFadeOut();
-            }
-        }
-
-        HandleFade();
-    }
-
-    void HandleFade()
-    {
-        if (fadingIn)
-        {
-            fadeTimer += Time.deltaTime;
-            float alpha = Mathf.Clamp01(fadeTimer / fadeDuration);
-            SetAlpha(alpha);
-            if (alpha >= 1f)
-                fadingIn = false;
-        }
-        else if (fadingOut)
-        {
-            fadeTimer += Time.deltaTime;
-            float alpha = Mathf.Clamp01(1f - (fadeTimer / fadeDuration));
-            SetAlpha(alpha);
-            if (alpha <= 0f)
-            {
-                fadingOut = false;
-                panelVisible = false;
-                uiPanel.SetActive(false);
-            }
-        }
-    }
-
-    void SetAlpha(float alpha)
-    {
-        if (panelRenderer != null)
-        {
-            Color color = panelRenderer.material.color;
-            color.a = alpha;
-            panelRenderer.material.color = color;
-        }
-    }
-
-    void StartFadeIn()
-    {
-        panelVisible = true;
-        fadingIn = true;
-        fadingOut = false;
-        fadeTimer = 0f;
-        hideTimer = 0f;
-        uiPanel.SetActive(true);
-        SetAlpha(0f);
-    }
-
-    void StartFadeOut()
-    {
-        fadingOut = true;
-        fadingIn = false;
-        fadeTimer = 0f;
-        hideTimer = 0f;
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        Debug.Log("Something entered trigger: " + other.name);
-        if (other.CompareTag("Player"))
-        {
-            Debug.Log("Player entered zone!");
-            playerInZone = true;
-        }
-    }
-
-    void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            playerInZone = false;
-            gazeTimer = 0f;
-            StartFadeOut();
+            float target = open ? 1f : 0f;
+            scrollPanel.alpha = Mathf.MoveTowards(scrollPanel.alpha, target, fadeSpeed * Time.deltaTime);
         }
     }
 }
